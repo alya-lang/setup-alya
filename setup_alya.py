@@ -41,10 +41,16 @@ def detect_target():
     mach = platform.machine().lower()
 
     if sys_plat.startswith("linux"):
-        # Linux releases: x86_64-linux or arm64-linux
+        # Linux releases: x86_64-linux, arm64-linux, or x86-linux.
+        # Note platform.machine() reports the KERNEL arch, so a 32-bit
+        # userland on an x86_64 kernel (e.g. i386 containers) still says
+        # x86_64 — probe the pointer width too to catch those.
         if mach in ("arm64", "aarch64"):
             arch = "arm64"
             platform_id = "arm64-linux"
+        elif mach in ("i386", "i686", "x86") or platform.architecture()[0] == "32bit":
+            arch = "x86"
+            platform_id = "x86-linux"
         else:
             arch = "x86_64"
             platform_id = "x86_64-linux"

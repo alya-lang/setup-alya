@@ -109,6 +109,7 @@ Pre-built binaries are downloaded directly from official [Alya Releases](https:/
 | Operating System | Architecture | Archive Format | Binary | Available Since |
 |:---|:---|:---|:---|:---|
 | **Linux** | `x86_64` | `.tar.gz` | `alya` | all releases |
+| **Linux** | `x86` (32-bit) | `.tar.gz` | `alya` | upcoming (no `x86-linux` asset published yet) |
 | **Linux** | `arm64` (AArch64) | `.tar.gz` | `alya` | `v0.0.19` and later |
 | **macOS** | `arm64` (Apple Silicon) | `.tar.gz` | `alya` | all releases |
 | **macOS** | `x86_64` (Intel) | `.tar.gz` | `alya` | all releases |
