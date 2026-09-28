@@ -87,3 +87,43 @@ jobs:
         run: |
           echo 'say "Hello from setup-alya ARM CI!"' > hello.alya
           alya run hello.alya
+
+  test-x86:
+    name: Test (Linux x86, ${{ matrix.version }})
+    runs-on: ubuntu-latest
+    container:
+      image: i386/debian:12-slim
+    strategy:
+      fail-fast: false
+      matrix:
+        version: ['latest']
+    steps:
+      - name: Install Python and C toolchain
+        run: apt-get update && apt-get install -y python3 gcc libc6-dev
+
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      - name: Set up Alya Compiler (${{ matrix.version }})
+        id: alya
+        uses: ./
+        with:
+          version: ${{ matrix.version }}
+
+      - name: Verify alya executable on PATH
+        run: |
+          alya --version
+
+      - name: Check action outputs
+        shell: bash
+        run: |
+          echo "Output version: ${{ steps.alya.outputs.version }}"
+          echo "Output path:    ${{ steps.alya.outputs.alya-path }}"
+          test -n "${{ steps.alya.outputs.version }}"
+          test -n "${{ steps.alya.outputs.alya-path }}"
+
+      - name: Test simple Alya execution
+        shell: bash
+        run: |
+          echo 'say "Hello from setup-alya x86 CI!"' > hello.alya
+          alya run hello.alya
