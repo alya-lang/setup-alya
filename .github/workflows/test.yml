@@ -91,39 +91,33 @@ jobs:
   test-x86:
     name: Test (Linux x86, ${{ matrix.version }})
     runs-on: ubuntu-latest
-    container:
-      image: i386/debian:12-slim
     strategy:
       fail-fast: false
       matrix:
         version: ['latest', '0.0.19']
     steps:
-      - name: Install Python and C toolchain
-        run: apt-get update && apt-get install -y python3 gcc libc6-dev
-
       - name: Checkout repository
         uses: actions/checkout@v7
 
-      - name: Set up Alya Compiler (${{ matrix.version }})
-        id: alya
-        uses: ./
-        with:
-          version: ${{ matrix.version }}
-
-      - name: Verify alya executable on PATH
+      - name: Test x86 installer in 32-bit userland
+        env:
+          INPUT_VERSION: ${{ matrix.version }}
+          INPUT_TOKEN: ${{ github.token }}
         run: |
-          alya --version
-
-      - name: Check action outputs
-        shell: bash
-        run: |
-          echo "Output version: ${{ steps.alya.outputs.version }}"
-          echo "Output path:    ${{ steps.alya.outputs.alya-path }}"
-          test -n "${{ steps.alya.outputs.version }}"
-          test -n "${{ steps.alya.outputs.alya-path }}"
-
-      - name: Test simple Alya execution
-        shell: bash
-        run: |
-          echo 'say "Hello from setup-alya x86 CI!"' > hello.alya
-          alya run hello.alya
+          docker run --rm \
+            -v "${GITHUB_WORKSPACE}:/ws" \
+            -w /ws \
+            -e INPUT_VERSION="${INPUT_VERSION}" \
+            -e INPUT_CHECK_CHECKSUM=true \
+            -e INPUT_TOKEN="${INPUT_TOKEN}" \
+            -e INPUT_TOOLCHAIN=true \
+            i386/debian:12-slim sh -c '
+              set -e
+              apt-get update && apt-get install -y python3 gcc libc6-dev ca-certificates
+              python3 ./setup_alya.py
+              ALYA=$(find /root/.alya -name alya -type f | head -n 1)
+              test -n "$ALYA"
+              "$ALYA" --version
+              echo "say \"Hello from setup-alya x86 CI!\"" > hello_x86.alya
+              "$ALYA" run hello_x86.alya
+            '
