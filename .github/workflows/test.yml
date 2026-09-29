@@ -111,7 +111,7 @@ jobs:
             -e INPUT_CHECK_CHECKSUM=true \
             -e INPUT_TOKEN="${INPUT_TOKEN}" \
             -e INPUT_TOOLCHAIN=true \
-            i386/debian:12-slim sh -c '
+            i386/debian:trixie-slim sh -c '
               set -e
               apt-get update && apt-get install -y python3 gcc libc6-dev ca-certificates
               python3 ./setup_alya.py
