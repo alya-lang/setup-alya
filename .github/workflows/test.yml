@@ -96,7 +96,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        version: ['latest']
+        version: ['latest', '0.0.19']
     steps:
       - name: Install Python and C toolchain
         run: apt-get update && apt-get install -y python3 gcc libc6-dev
