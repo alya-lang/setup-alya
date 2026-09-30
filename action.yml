@@ -19,6 +19,10 @@ inputs:
     description: 'GitHub token used for GitHub API requests to avoid rate limits'
     required: false
     default: ${{ github.token }}
+  arch:
+    description: 'CPU architecture override (e.g. "x86" for the 32-bit Linux compiler on a 64-bit runner). Empty auto-detects the runner arch.'
+    required: false
+    default: ''
   toolchain:
     description: 'Ensure zero-setup toolchain readiness and export ALYA_TOOLCHAIN_AUTO_INSTALL=1'
     required: false
@@ -41,6 +45,7 @@ runs:
       run: python3 "${{ github.action_path }}/setup_alya.py"
       env:
         INPUT_VERSION: ${{ inputs.version }}
+        INPUT_ARCH: ${{ inputs.arch }}
         INPUT_CHECK_CHECKSUM: ${{ inputs.check-checksum }}
         INPUT_TOKEN: ${{ inputs.token }}
         INPUT_TOOLCHAIN: ${{ inputs.toolchain }}

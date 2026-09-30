@@ -121,3 +121,32 @@ jobs:
               echo "say \"Hello from setup-alya x86 CI!\"" > hello_x86.alya
               "$ALYA" run hello_x86.alya
             '
+
+  test-arch-override:
+    name: Test (arch override to x86, ${{ matrix.version }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        version: ['latest', '0.0.19']
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      - name: Install 32-bit C toolchain
+        run: sudo apt-get update && sudo apt-get install -y gcc-multilib libc6-i386
+
+      - name: Set up 32-bit Alya Compiler via arch override
+        id: alya
+        uses: ./
+        with:
+          version: ${{ matrix.version }}
+          arch: x86
+
+      - name: Verify 32-bit alya executable
+        shell: bash
+        run: |
+          alya --version
+          file "$(which alya)" | grep -i "32-bit"
+          echo 'say "Hello from setup-alya arch override!"' > hello_override.alya
+          alya run hello_override.alya

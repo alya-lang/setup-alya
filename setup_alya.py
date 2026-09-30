@@ -35,51 +35,88 @@ def log_error(msg):
     print(f"::error::[setup-alya] {msg}", flush=True)
 
 
-def detect_target():
-    """Detect runner OS and architecture matching Alya release artifacts."""
+# Accepted `arch` input values (including common aliases) mapped to the
+# canonical names used in Alya release asset ids.
+ARCH_ALIASES = {
+    "x86": "x86",
+    "i386": "x86",
+    "i686": "x86",
+    "x86_64": "x86_64",
+    "x64": "x86_64",
+    "amd64": "x86_64",
+    "arm64": "arm64",
+    "aarch64": "arm64",
+}
+
+# Architectures with published Alya release assets, per runner OS.
+OS_ARCH_PLATFORMS = {
+    "linux": {"x86_64": "x86_64-linux", "arm64": "arm64-linux", "x86": "x86-linux"},
+    "darwin": {"x86_64": "x86_64-macos", "arm64": "arm64-macos"},
+    "win32": {"x86_64": "x86_64-windows", "arm64": "arm64-windows"},
+}
+
+
+def detect_target(requested_arch=""):
+    """Detect runner OS and architecture matching Alya release artifacts.
+
+    requested_arch overrides the detected CPU arch (e.g. install the
+    32-bit x86 compiler on a 64-bit Linux runner). Empty = auto-detect.
+    """
     sys_plat = sys.platform
     mach = platform.machine().lower()
 
     if sys_plat.startswith("linux"):
-        # Linux releases: x86_64-linux, arm64-linux, or x86-linux.
+        os_key = "linux"
         # Note platform.machine() reports the KERNEL arch, so a 32-bit
         # userland on an x86_64 kernel (e.g. i386 containers) still says
         # x86_64 — probe the pointer width too to catch those.
         if mach in ("arm64", "aarch64"):
-            arch = "arm64"
-            platform_id = "arm64-linux"
+            detected = "arm64"
         elif mach in ("i386", "i686", "x86") or platform.architecture()[0] == "32bit":
-            arch = "x86"
-            platform_id = "x86-linux"
+            detected = "x86"
         else:
-            arch = "x86_64"
-            platform_id = "x86_64-linux"
+            detected = "x86_64"
         ext = "tar.gz"
         bin_name = "alya"
     elif sys_plat == "darwin":
-        # macOS releases: arm64-macos or x86_64-macos
+        os_key = "darwin"
         if mach in ("arm64", "aarch64"):
-            arch = "arm64"
-            platform_id = "arm64-macos"
+            detected = "arm64"
         else:
-            arch = "x86_64"
-            platform_id = "x86_64-macos"
+            detected = "x86_64"
         ext = "tar.gz"
         bin_name = "alya"
     elif sys_plat == "win32":
-        # Windows releases: x86_64-windows or arm64-windows
+        os_key = "win32"
         if mach in ("arm64", "aarch64"):
-            arch = "arm64"
-            platform_id = "arm64-windows"
+            detected = "arm64"
         else:
-            arch = "x86_64"
-            platform_id = "x86_64-windows"
+            detected = "x86_64"
         ext = "zip"
         bin_name = "alya.exe"
     else:
         raise RuntimeError(f"Unsupported operating system: {sys_plat} ({mach})")
 
-    return platform_id, ext, bin_name
+    arch = detected
+    if requested_arch and requested_arch.strip():
+        key = requested_arch.strip().lower()
+        if key not in ARCH_ALIASES:
+            raise RuntimeError(
+                f"Unsupported arch override: '{requested_arch}' "
+                f"(expected one of: {', '.join(sorted(ARCH_ALIASES))})"
+            )
+        arch = ARCH_ALIASES[key]
+        if arch != detected:
+            log(f"Arch override: installing '{arch}' build on '{detected}' runner")
+
+    allowed = OS_ARCH_PLATFORMS[os_key]
+    if arch not in allowed:
+        raise RuntimeError(
+            f"No Alya release asset for '{arch}' on {os_key} "
+            f"(available: {', '.join(sorted(allowed))})"
+        )
+
+    return allowed[arch], ext, bin_name
 
 
 def resolve_version(requested_version, token=""):
@@ -151,12 +188,13 @@ def verify_sha256(file_path, expected_hash):
 
 def main():
     requested_version = os.environ.get("INPUT_VERSION", "latest")
+    requested_arch = os.environ.get("INPUT_ARCH", "")
     check_checksum = os.environ.get("INPUT_CHECK_CHECKSUM", "true").lower() in ("true", "1", "yes")
     token = os.environ.get("INPUT_TOKEN", "").strip()
     toolchain_enabled = os.environ.get("INPUT_TOOLCHAIN", "true").lower() in ("true", "1", "yes")
 
     try:
-        platform_id, ext, bin_name = detect_target()
+        platform_id, ext, bin_name = detect_target(requested_arch)
     except RuntimeError as e:
         log_error(str(e))
         sys.exit(1)

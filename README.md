@@ -87,6 +87,7 @@ jobs:
 | Input | Description | Required | Default |
 |:---|:---|:---:|:---:|
 | `version` | Target Alya compiler version (e.g. `'0.0.18'`, `'v0.0.19'`, or `'latest'`) | No | `'latest'` |
+| `arch` | CPU architecture override, e.g. `'x86'` installs the 32-bit Linux compiler on a 64-bit runner (aliases: `i386`/`i686`, `x64`/`amd64`, `aarch64`). Empty auto-detects the runner arch | No | `''` |
 | `check-checksum` | Verify SHA-256 checksum of the downloaded release archive | No | `'true'` |
 | `token` | GitHub token used for API requests (to avoid rate limits) | No | `${{ github.token }}` |
 | `toolchain` | Ensure zero-setup toolchain readiness and export `ALYA_TOOLCHAIN_AUTO_INSTALL=1` | No | `'true'` |
