@@ -38,9 +38,6 @@ def log_error(msg):
 # Accepted `arch` input values (including common aliases) mapped to the
 # canonical names used in Alya release asset ids.
 ARCH_ALIASES = {
-    "x86": "x86",
-    "i386": "x86",
-    "i686": "x86",
     "x86_64": "x86_64",
     "x64": "x86_64",
     "amd64": "x86_64",
@@ -50,7 +47,7 @@ ARCH_ALIASES = {
 
 # Architectures with published Alya release assets, per runner OS.
 OS_ARCH_PLATFORMS = {
-    "linux": {"x86_64": "x86_64-linux", "arm64": "arm64-linux", "x86": "x86-linux"},
+    "linux": {"x86_64": "x86_64-linux", "arm64": "arm64-linux"},
     "darwin": {"x86_64": "x86_64-macos", "arm64": "arm64-macos"},
     "win32": {"x86_64": "x86_64-windows", "arm64": "arm64-windows"},
 }
@@ -60,20 +57,19 @@ def detect_target(requested_arch=""):
     """Detect runner OS and architecture matching Alya release artifacts.
 
     requested_arch overrides the detected CPU arch (e.g. install the
-    32-bit x86 compiler on a 64-bit Linux runner). Empty = auto-detect.
+    arm64 build on an x86_64 runner). Empty = auto-detect.
     """
     sys_plat = sys.platform
     mach = platform.machine().lower()
 
     if sys_plat.startswith("linux"):
         os_key = "linux"
-        # Note platform.machine() reports the KERNEL arch, so a 32-bit
-        # userland on an x86_64 kernel (e.g. i386 containers) still says
-        # x86_64 — probe the pointer width too to catch those.
         if mach in ("arm64", "aarch64"):
             detected = "arm64"
         elif mach in ("i386", "i686", "x86") or platform.architecture()[0] == "32bit":
-            detected = "x86"
+            raise RuntimeError(
+                "32-bit x86 architecture is not supported. Alya is 64-bit only (x86_64, arm64)."
+            )
         else:
             detected = "x86_64"
         ext = "tar.gz"
@@ -90,6 +86,10 @@ def detect_target(requested_arch=""):
         os_key = "win32"
         if mach in ("arm64", "aarch64"):
             detected = "arm64"
+        elif mach in ("i386", "i686", "x86") or platform.architecture()[0] == "32bit":
+            raise RuntimeError(
+                "32-bit x86 architecture is not supported. Alya is 64-bit only (x86_64, arm64)."
+            )
         else:
             detected = "x86_64"
         ext = "zip"
@@ -100,6 +100,10 @@ def detect_target(requested_arch=""):
     arch = detected
     if requested_arch and requested_arch.strip():
         key = requested_arch.strip().lower()
+        if key in ("x86", "i386", "i686"):
+            raise RuntimeError(
+                "32-bit x86 architecture is not supported. Alya is 64-bit only (x86_64, arm64)."
+            )
         if key not in ARCH_ALIASES:
             raise RuntimeError(
                 f"Unsupported arch override: '{requested_arch}' "

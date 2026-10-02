@@ -20,7 +20,7 @@ inputs:
     required: false
     default: ${{ github.token }}
   arch:
-    description: 'CPU architecture override (e.g. "x86" for the 32-bit Linux compiler on a 64-bit runner). Empty auto-detects the runner arch.'
+    description: 'CPU architecture override (e.g. "arm64" or "x86_64"). Empty auto-detects the runner arch.'
     required: false
     default: ''
   toolchain:

@@ -88,42 +88,8 @@ jobs:
           echo 'say "Hello from setup-alya ARM CI!"' > hello.alya
           alya run hello.alya
 
-  test-x86:
-    name: Test (Linux x86, ${{ matrix.version }})
-    runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        version: ['latest', '0.0.19']
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v7
-
-      - name: Test x86 installer in 32-bit userland
-        env:
-          INPUT_VERSION: ${{ matrix.version }}
-          INPUT_TOKEN: ${{ github.token }}
-        run: |
-          docker run --rm \
-            -v "${GITHUB_WORKSPACE}:/ws" \
-            -w /ws \
-            -e INPUT_VERSION="${INPUT_VERSION}" \
-            -e INPUT_CHECK_CHECKSUM=true \
-            -e INPUT_TOKEN="${INPUT_TOKEN}" \
-            -e INPUT_TOOLCHAIN=true \
-            i386/debian:trixie-slim sh -c '
-              set -e
-              apt-get update && apt-get install -y python3 gcc libc6-dev ca-certificates
-              python3 ./setup_alya.py
-              ALYA=$(find /root/.alya -name alya -type f | head -n 1)
-              test -n "$ALYA"
-              "$ALYA" --version
-              echo "say \"Hello from setup-alya x86 CI!\"" > hello_x86.alya
-              "$ALYA" run hello_x86.alya
-            '
-
   test-arch-override:
-    name: Test (arch override to x86, ${{ matrix.version }})
+    name: Test (arch override to x64, ${{ matrix.version }})
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -133,20 +99,17 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v7
 
-      - name: Install 32-bit C toolchain
-        run: sudo apt-get update && sudo apt-get install -y gcc-multilib libc6-i386
-
-      - name: Set up 32-bit Alya Compiler via arch override
+      - name: Set up Alya Compiler via arch override
         id: alya
         uses: ./
         with:
           version: ${{ matrix.version }}
-          arch: x86
+          arch: x64
 
-      - name: Verify 32-bit alya executable
+      - name: Verify alya executable
         shell: bash
         run: |
           alya --version
-          file "$(which alya)" | grep -i "32-bit"
+          file "$(which alya)" | grep -i "64-bit"
           echo 'say "Hello from setup-alya arch override!"' > hello_override.alya
           alya run hello_override.alya
