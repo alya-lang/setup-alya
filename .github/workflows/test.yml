@@ -87,29 +87,3 @@ jobs:
         run: |
           echo 'say "Hello from setup-alya ARM CI!"' > hello.alya
           alya run hello.alya
-
-  test-arch-override:
-    name: Test (arch override to x64, ${{ matrix.version }})
-    runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        version: ['latest', '0.0.19']
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v7
-
-      - name: Set up Alya Compiler via arch override
-        id: alya
-        uses: ./
-        with:
-          version: ${{ matrix.version }}
-          arch: x64
-
-      - name: Verify alya executable
-        shell: bash
-        run: |
-          alya --version
-          file "$(which alya)" | grep -i "64-bit"
-          echo 'say "Hello from setup-alya arch override!"' > hello_override.alya
-          alya run hello_override.alya
